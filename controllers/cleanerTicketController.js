@@ -3,33 +3,58 @@ const CustomError = require("../utils/customError");
 const CleanerTicket = require("../models/cleanerTicket");
 
 exports.createTicket = BigPromise(async (req, res, next) => {
-  // const user = req.user;
   const {
     customerId,
     cleanerId,
+    scheduleOfService,
     typesOfServices,
-    otherServiceTypeText,
     modeOfService,
     status,
-    pickupDate,
-    pickupTime,
-    dropDate,
-    dropTime,
   } = req.body;
 
   try {
-    const ticket = await CleanerTicket.create({
-      customerId,
-      cleanerId,
-      typesOfServices,
-      otherServiceTypeText,
-      modeOfService,
-      status,
-      pickupDate,
-      pickupTime,
-      dropDate,
-      dropTime,
-    });
+    let ticket;
+    if (scheduleOfService === "current") {
+      ticket = await CleanerTicket.create({
+        customerId,
+        cleanerId,
+        scheduleOfService,
+        typesOfServices,
+        otherServiceTypeText: req.body?.otherServiceTypeText,
+        modeOfService,
+        query: req.body?.query,
+        description: req.body?.description,
+        status,
+        currentLocation: req.body?.currentLocation,
+        trackingLocation: req.body?.trackingLocation,
+        distance: req.body?.distance,
+        totalPrice: req.body?.totalPrice,
+        paymentMode: req.body?.paymentMode,
+      });
+    } else if (scheduleOfService === "scheduled") {
+      ticket = await CleanerTicket.create({
+        customerId,
+        cleanerId,
+        scheduleOfService,
+        typesOfServices,
+        otherServiceTypeText: req.body?.otherServiceTypeText,
+        modeOfService,
+        query: req.body?.query,
+        description: req.body?.description,
+        status,
+        currentLocation: req.body?.currentLocation,
+        trackingLocation: req.body?.trackingLocation,
+        distance: req.body?.distance,
+        totalPrice: req.body?.totalPrice,
+        paymentMode: req.body?.paymentMode,
+        pickupPlace: req.body?.pickupPlace,
+        pickupDate: req.body?.pickupDate,
+        pickupTime: req.body?.pickupTime,
+        dropPlace: req.body?.dropPlace,
+        dropDate: req.body?.dropDate,
+        dropTime: req.body?.dropTime,
+      });
+    }
 
     return res.status(201).json({
       success: true,
@@ -37,38 +62,42 @@ exports.createTicket = BigPromise(async (req, res, next) => {
     });
   } catch (error) {
     console.log(error);
-    return next(new CustomError("Order can not be created", 401));
+    return next(new CustomError("Ticket can not be created", 401));
   }
 });
 
 exports.getSingleTicket = BigPromise(async (req, res, next) => {
   const ticketId = req.params.id;
 
-  const ticket = await CleanerTicket.findById(ticketId)
-    .populate("customerId", "name email")
-    .populate("cleanerId", "ownerName email shopName shopDesc");
-  if (!ticket) {
-    return next(new CustomError("Ticket not found", 401));
-  }
+  try {
+    const ticket = await CleanerTicket.findById(ticketId)
+      .populate("customerId", "name email")
+      .populate("cleanerId", "name email phoneNo shopName");
+    if (!ticket) {
+      return next(new CustomError("Ticket not found", 401));
+    }
 
-  res.status(201).json({
-    success: true,
-    ticket,
-  });
+    return res.status(201).json({
+      success: true,
+      ticket,
+    });
+  } catch (error) {
+    console.log(error);
+    return next(new CustomError("Ticket can not be found", 401));
+  }
 });
 
 exports.getAllTickets = BigPromise(async (req, res, next) => {
   const ticket = await CleanerTicket.find({})
     .populate("customerId", "name email")
-    .populate("cleanerId", "ownerName email shopName shopDesc");
-  console.log(ticket);
+    .populate("cleanerId", "name email phoneNo shopName");
   if (!ticket) {
     return next(new CustomError("No Ticket Found", 401));
   } else if (ticket < 1) {
     return next(new CustomError("Ticket list is empty", 400));
   }
 
-  res.status(201).json({
+  return res.status(201).json({
     success: true,
     ticket,
   });
@@ -76,31 +105,57 @@ exports.getAllTickets = BigPromise(async (req, res, next) => {
 
 exports.updateSingleTicket = BigPromise(async (req, res, next) => {
   const ticketId = req.params.id;
-  const ticket = await CleanerTicket.findById(ticketId);
+  const updatedVal = {
+    customerId: req.body?.customerId,
+    cleanerId: req.body?.cleanerId,
+    scheduleOfService: req.body?.scheduleOfService,
+    typesOfServices: req.body?.typesOfServices,
+    otherServiceTypeText: req.body?.otherServiceTypeText,
+    modeOfService: req.body?.modeOfService,
+    query: req.body?.query,
+    description: req.body?.description,
+    status: req.body?.status,
+    trackingLocation: req.body?.trackingLocation,
+    distance: req.body?.distance,
+    totalPrice: req.body?.totalPrice,
+    paymentMode: req.body?.paymentMode,
+    pickupPlace: req.body?.pickupPlace,
+    pickupDate: req.body?.pickupDate,
+    pickupTime: req.body?.pickupTime,
+    dropPlace: req.body?.dropPlace,
+    dropDate: req.body?.dropDate,
+    dropTime: req.body?.dropTime,
+  };
 
-  if (!ticket) {
-    return next(new CustomError("No Ticket Found", 401));
+  try {
+    await CleanerTicket.findByIdAndUpdate(ticketId, {
+      ...updatedVal,
+    })
+      .then(() => {
+        return res.status(201).json({
+          success: true,
+          ticket: updatedVal,
+        });
+      })
+      .catch((err) => {
+        console.log(err);
+        return next(new CustomError("Ticket can not be updated", 401));
+      });
+  } catch (error) {
+    console.log(error);
+    return next(new CustomError("Ticket can not be updated", 401));
   }
-  // const { ticketStatus } = req.body;
-  // if (ticket.ticketStatus === "completed") {
-  //   return next(new CustomError("Ticket already marked as completed", 401));
-  // }
-
-  const updatedTicket = await CleanerTicket.findByIdAndUpdate(ticketId, {
-    ...req.body,
-  });
-
-  res.status(201).json({
-    success: true,
-    ticket: updatedTicket,
-  });
 });
 
 exports.deleteSingleTicket = BigPromise(async (req, res, next) => {
   const ticketId = req.params.id;
-  await CleanerTicket.findByIdAndRemove(ticketId);
-
-  res.status(201).json({
-    success: true,
-  });
+  try {
+    await CleanerTicket.findByIdAndRemove(ticketId);
+    return res.status(201).json({
+      success: true,
+    });
+  } catch (error) {
+    console.log(error);
+    return next(new CustomError("Ticket can not be remove", 401));
+  }
 });

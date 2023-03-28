@@ -5,18 +5,46 @@ const crypto = require("crypto");
 
 const cleanerSchema = new Schema(
   {
-    cleanerName: {
+    cleanerUid: {
       type: String,
-      required: true,
+      unique: true,
     },
-    cleanerPic: {
+    firstName: {
+      type: String,
+    },
+    lastName: {
+      type: String,
+    },
+    fullName: {
+      type: String,
+    },
+    photo: {
       type: String,
     },
     email: {
       type: String,
-      required: true,
+      unique: true,
     },
-    phoneNum: {
+    password: {
+      type: String,
+      select: false,
+    },
+    phoneNo: {
+      type: String,
+      unique: true,
+    },
+    address: {
+      type: String,
+    },
+    googleUserId: {
+      type: String,
+      unique: true,
+      select: false,
+    },
+    shortDescriotion: {
+      type: String,
+    },
+    descriotion: {
       type: String,
     },
     shopName: {
@@ -30,11 +58,12 @@ const cleanerSchema = new Schema(
     },
     workers: {
       type: String,
-      required: true,
+    },
+    rating: {
+      type: String,
     },
     location: {
       type: String,
-      required: true,
     },
     accountDisable: {
       type: Boolean,
@@ -67,9 +96,16 @@ cleanerSchema.methods.isPasswordValidated = async function (sentUserPassword) {
   return await bcrypt.compare(sentUserPassword, this.password);
 };
 
+// Validate the password with passed on user password
+cleanerSchema.methods.isGoogleUserIdValidated = async function (
+  sentGoogleUserId
+) {
+  return sentGoogleUserId === this.googleUserId;
+};
+
 // Create and Return JWT Token
 cleanerSchema.methods.getJWTToken = function () {
-  return jwt.sign({ id: this._id, email: this.email }, process.env.JWT_SECRET, {
+  return jwt.sign({ id: this._id }, process.env.JWT_SECRET, {
     expiresIn: process.env.JWT_EXPIRY * 24 * 60 * 60 * 1000,
   });
 };

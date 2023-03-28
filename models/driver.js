@@ -5,36 +5,62 @@ const crypto = require("crypto");
 
 const drierSchema = new Schema(
   {
-    driverName: {
+    driverUid: {
       type: String,
-      required: true,
+      unique: true,
     },
-    driverPic: {
+    firstName: {
+      type: String,
+    },
+    lastName: {
+      type: String,
+    },
+    fullName: {
+      type: String,
+    },
+    photo: {
       type: String,
     },
     email: {
       type: String,
-      required: true,
+      unique: true,
     },
-    phoneNum: {
+    password: {
       type: String,
-      required: true,
+      select: false,
+    },
+    phoneNo: {
+      type: String,
+      unique: true,
+    },
+    address: {
+      type: String,
+    },
+    googleUserId: {
+      type: String,
+      unique: true,
+      select: false,
+    },
+    shortDescriotion: {
+      type: String,
+    },
+    descriotion: {
+      type: String,
     },
     driverLicense: {
       type: String,
-      required: true,
     },
     licensePic: {
       type: String,
-      required: true,
     },
     workerExperience: {
       type: String,
-      required: true,
     },
     homeAddress: {
       type: String,
-      required: true,
+    },
+    rating: {
+      type: String,
     },
     accountDisable: {
       type: Boolean,
@@ -67,9 +93,16 @@ drierSchema.methods.isPasswordValidated = async function (sentUserPassword) {
   return await bcrypt.compare(sentUserPassword, this.password);
 };
 
+// Validate the password with passed on user password
+drierSchema.methods.isGoogleUserIdValidated = async function (
+  sentGoogleUserId
+) {
+  return sentGoogleUserId === this.googleUserId;
+};
+
 // Create and Return JWT Token
 drierSchema.methods.getJWTToken = function () {
-  return jwt.sign({ id: this._id, email: this.email }, process.env.JWT_SECRET, {
+  return jwt.sign({ id: this._id }, process.env.JWT_SECRET, {
     expiresIn: process.env.JWT_EXPIRY * 24 * 60 * 60 * 1000,
   });
 };

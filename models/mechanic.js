@@ -5,38 +5,73 @@ const crypto = require("crypto");
 
 const mechanicSchema = new Schema(
   {
-    ownerName: {
+    mechanicUid: {
       type: String,
-      required: true,
+      unique: true,
     },
-    ownerPic: {
+    firstName: {
+      type: String,
+    },
+    lastName: {
+      type: String,
+    },
+    fullName: {
+      type: String,
+    },
+    photo: {
       type: String,
     },
     email: {
       type: String,
-      required: true,
+      unique: true,
     },
-    phoneNum: {
+    password: {
+      type: String,
+      select: false,
+    },
+    phoneNo: {
+      type: String,
+      unique: true,
+    },
+    address: {
+      type: String,
+    },
+    googleUserId: {
+      type: String,
+      select: false,
+      unique: true,
+    },
+    shortDescriotion: {
+      type: String,
+    },
+    descriotion: {
       type: String,
     },
     shopName: {
       type: String,
-      required: true,
     },
     shopPic: {
       type: String,
     },
     shopDesc: {
       type: String,
-      required: true,
     },
     workers: {
       type: String,
-      required: true,
+    },
+    rating: {
+      type: String,
     },
     location: {
       type: String,
-      required: true,
+    },
+    currentLocation: {
+      type: [
+        {
+          latitude: { type: Date },
+          longitude: { type: String },
+        },
+      ],
     },
     accountDisable: {
       type: Boolean,
@@ -69,9 +104,16 @@ mechanicSchema.methods.isPasswordValidated = async function (sentUserPassword) {
   return await bcrypt.compare(sentUserPassword, this.password);
 };
 
+// Validate the password with passed on user password
+mechanicSchema.methods.isGoogleUserIdValidated = async function (
+  sentGoogleUserId
+) {
+  return sentGoogleUserId === this.googleUserId;
+};
+
 // Create and Return JWT Token
 mechanicSchema.methods.getJWTToken = function () {
-  return jwt.sign({ id: this._id, email: this.email }, process.env.JWT_SECRET, {
+  return jwt.sign({ id: this._id }, process.env.JWT_SECRET, {
     expiresIn: process.env.JWT_EXPIRY * 24 * 60 * 60 * 1000,
   });
 };

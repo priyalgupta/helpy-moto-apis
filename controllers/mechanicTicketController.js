@@ -3,36 +3,64 @@ const CustomError = require("../utils/customError");
 const MechanicTicket = require("../models/mechanicTicket");
 
 exports.createTicket = BigPromise(async (req, res, next) => {
-  // const user = req.user;
+  const { _id } = req.decodedUser;
   const {
     customerId,
-    servProviderId,
-    serviceType,
-    serviceName,
+    // mechanicId,
+    scheduleOfService,
+    typesOfServices,
+    modeOfService,
     status,
-    query,
-    createdTime,
-    completedTime,
-    totalTime,
-    customerName,
-    vechicleName,
   } = req.body;
 
   try {
-    const ticket = await MechanicTicket.create({
-      customerId,
-      servProviderId,
-      serviceType,
-      serviceName,
-      status,
-      query,
-      createdTime,
-      completedTime,
-      totalTime,
-      customerName,
-      vechicleName,
-      // user: user._id,
-    });
+    if (_id === customerId) {
+      return next(new CustomError("Ticket credentials mismatch!", 400));
+    }
+
+    let ticket;
+
+    if (scheduleOfService === "current") {
+      ticket = await MechanicTicket.create({
+        customerId,
+        mechanicId,
+        scheduleOfService,
+        typesOfServices,
+        otherServiceTypeText: req.body?.otherServiceTypeText,
+        modeOfService,
+        query: req.body?.query,
+        description: req.body?.description,
+        status,
+        currentLocation: req.body?.currentLocation,
+        trackingLocation: req.body?.trackingLocation,
+        distance: req.body?.distance,
+        totalPrice: req.body?.totalPrice,
+        paymentMode: req.body?.paymentMode,
+      });
+    } else if (scheduleOfService === "scheduled") {
+      ticket = await MechanicTicket.create({
+        customerId,
+        mechanicId,
+        scheduleOfService,
+        typesOfServices,
+        otherServiceTypeText: req.body?.otherServiceTypeText,
+        modeOfService,
+        query: req.body?.query,
+        description: req.body?.description,
+        status,
+        currentLocation: req.body?.currentLocation,
+        trackingLocation: req.body?.trackingLocation,
+        distance: req.body?.distance,
+        totalPrice: req.body?.totalPrice,
+        paymentMode: req.body?.paymentMode,
+        pickupPlace: req.body?.pickupPlace,
+        dropPlace: req.body?.dropPlace,
+        pickupDate: req.body?.pickupDate,
+        pickupTime: req.body?.pickupTime,
+        dropDate: req.body?.dropDate,
+        dropTime: req.body?.dropTime,
+      });
+    }
 
     return res.status(201).json({
       success: true,
@@ -40,70 +68,181 @@ exports.createTicket = BigPromise(async (req, res, next) => {
     });
   } catch (error) {
     console.log(error);
-    return next(new CustomError("Order can not be created", 401));
+    return next(new CustomError("Ticket can not be created", 401));
   }
 });
 
 exports.getSingleTicket = BigPromise(async (req, res, next) => {
   const ticketId = req.params.id;
 
-  const ticket = await MechanicTicket.findById(ticketId)
-    .populate("customerId", "name email")
-    .populate("mechanicId", "ownerName email shopName shopDesc");
-  if (!ticket) {
-    return next(new CustomError("Ticket not found", 401));
+  try {
+    const ticket = await MechanicTicket.findById(ticketId)
+      .populate("customerId", "name email")
+      .populate("mechanicId", "name email phoneNo shopName");
+    if (!ticket) {
+      return next(new CustomError("Ticket not found", 401));
+    }
+
+    return res.status(201).json({
+      success: true,
+      ticket,
+    });
+  } catch (error) {
+    console.log(error);
+    return next(new CustomError("Ticket can not be found", 401));
   }
-
-  res.status(201).json({
-    success: true,
-    ticket,
-  });
-});
-
-exports.getAllTickets = BigPromise(async (req, res, next) => {
-  const ticket = await MechanicTicket.find({})
-    .populate("customerId", "name email")
-    .populate("mechanicId", "ownerName email shopName shopDesc");
-  console.log(ticket);
-  if (!ticket) {
-    return next(new CustomError("No Ticket Found", 401));
-  } else if (ticket < 1) {
-    return next(new CustomError("Ticket list is empty", 400));
-  }
-
-  res.status(201).json({
-    success: true,
-    ticket,
-  });
 });
 
 exports.updateSingleTicket = BigPromise(async (req, res, next) => {
   const ticketId = req.params.id;
-  const ticket = await MechanicTicket.findById(ticketId);
+  const updatedVal = {
+    customerId: req.body?.customerId,
+    mechanicId: req.body?.mechanicId,
+    scheduleOfService: req.body?.scheduleOfService,
+    typesOfServices: req.body?.typesOfServices,
+    otherServiceTypeText: req.body?.otherServiceTypeText,
+    modeOfService: req.body?.modeOfService,
+    query: req.body?.query,
+    description: req.body?.description,
+    status: req.body?.status,
+    trackingLocation: req.body?.trackingLocation,
+    distance: req.body?.distance,
+    totalPrice: req.body?.totalPrice,
+    paymentMode: req.body?.paymentMode,
+    pickupPlace: req.body?.pickupPlace,
+    pickupDate: req.body?.pickupDate,
+    pickupTime: req.body?.pickupTime,
+    dropPlace: req.body?.dropPlace,
+    dropDate: req.body?.dropDate,
+    dropTime: req.body?.dropTime,
+  };
 
-  if (!ticket) {
-    return next(new CustomError("No Ticket Found", 401));
+  try {
+    await MechanicTicket.findByIdAndUpdate(ticketId, {
+      ...updatedVal,
+    })
+      .then(() => {
+        return res.status(201).json({
+          success: true,
+          ticket: updatedVal,
+        });
+      })
+      .catch((err) => {
+        console.log(err);
+        return next(new CustomError("Ticket can not be updated", 401));
+      });
+  } catch (error) {
+    console.log(error);
+    return next(new CustomError("Ticket can not be updated", 401));
   }
-  const { ticketStatus } = req.body;
-  if (ticket.ticketStatus === "completed") {
-    return next(new CustomError("Ticket already marked as completed", 401));
+});
+
+exports.onTimeVerifyTicketOTP = BigPromise(async (req, res, next) => {
+  const { id, onTimeOTP } = req.body;
+
+  const mechanicTicket = await MechanicTicket.findById(id);
+
+  if (!mechanicTicket || mechanicTicket.status === "completed") {
+    return next(new CustomError("Ticket is invalid", 401));
   }
 
-  const updatedTicket = await MechanicTicket.findByIdAndUpdate(ticketId, {
-    ...req.body,
-  });
+  const isValidOTP = mechanicTicket.isOnTimeOTPValidated(onTimeOTP);
 
-  res.status(201).json({
+  if (!isValidOTP) {
+    return next(new CustomError("OTP not matched", 401));
+  }
+
+  mechanicTicket.isVerifiedOnTimeOTP = true;
+  await mechanicTicket.save();
+
+  return res.status(201).json({
     success: true,
-    ticket: updatedTicket,
+    isVerifiedOnTimeOTP: mechanicTicket.isVerifiedOnTimeOTP,
   });
 });
 
-exports.deleteSingleTicket = BigPromise(async (req, res, next) => {
-  const ticketId = req.params.id;
-  await MechanicTicket.findByIdAndRemove(ticketId);
+exports.scheduledArrivalVerifyTicketOTP = BigPromise(async (req, res, next) => {
+  const { id, scheduledArrivedOTP } = req.body;
 
-  res.status(201).json({
+  const mechanicTicket = await MechanicTicket.findById(id);
+
+  if (!mechanicTicket || mechanicTicket.status === "completed") {
+    return next(new CustomError("Ticket is invalid", 401));
+  }
+
+  const isValidOTP =
+    mechanicTicket.isScheduledArriveOTPValidated(scheduledArrivedOTP);
+
+  if (!isValidOTP) {
+    return next(new CustomError("OTP not matched", 401));
+  }
+
+  mechanicTicket.isVerifiedscheduledArrivedOTP = true;
+  await mechanicTicket.generateScheduledWorkshopOTP();
+  await mechanicTicket.save();
+
+  return res.status(201).json({
     success: true,
+    isVerifiedArrivedOTP: mechanicTicket.isVerifiedscheduledArrivedOTP,
   });
+});
+
+exports.scheduledWorkshopVerifyTicketOTP = BigPromise(
+  async (req, res, next) => {
+    const { id, scheduledWorkshopOTP } = req.body;
+
+    const mechanicTicket = await MechanicTicket.findById(id);
+
+    if (!mechanicTicket || mechanicTicket.status === "completed") {
+      return next(new CustomError("Ticket is invalid", 401));
+    }
+
+    const isValidOTP =
+      mechanicTicket.isScheduledWorkshopOTPValidated(scheduledWorkshopOTP);
+
+    if (!isValidOTP) {
+      return next(new CustomError("OTP not matched", 401));
+    }
+
+    mechanicTicket.isVerifiedscheduledWorkshopOTP = true;
+    await mechanicTicket.generateScheduledDeliveredOTP();
+    await mechanicTicket.save();
+
+    return res.status(201).json({
+      success: true,
+      isVerifiedWorkshopOTP: mechanicTicket.isVerifiedscheduledWorkshopOTP,
+    });
+  }
+);
+
+exports.scheduledDeliverVerifyTicketOTP = BigPromise(async (req, res, next) => {
+  const { id, scheduledDeliveredOTP } = req.body;
+
+  const mechanicTicket = await MechanicTicket.findById(id);
+
+  if (!mechanicTicket || mechanicTicket.status === "completed") {
+    return next(new CustomError("Ticket is invalid", 401));
+  }
+
+  const isValidOTP = mechanicTicket.isScheduledDeliveredOTPValidated(
+    scheduledDeliveredOTP
+  );
+
+  if (!isValidOTP) {
+    return next(new CustomError("OTP not matched", 401));
+  }
+
+  mechanicTicket.isVerifiedscheduledDeliveredOTP = true;
+  await mechanicTicket.save();
+
+  return res.status(201).json({
+    success: true,
+    isVerifiedDeliveredOTP: mechanicTicket.isVerifiedscheduledDeliveredOTP,
+  });
+});
+
+exports.getNearestMechanicList = BigPromise(async (req, res, next) => {
+  const { currentLocation } = req.body;
+
+  const { latitude, longitude } = currentLocation;
 });

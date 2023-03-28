@@ -1,9 +1,6 @@
 const express = require("express");
-const {
-  // Imports Controllers
-} = require("../controllers/mechanicTicketController");
 
-const { isLoggedIn } = require("../middlewares/driverUser");
+const { isDriverLoggedIn } = require("../middlewares/driverUser");
 const {
   createTicket,
   getSingleTicket,
@@ -12,25 +9,33 @@ const {
   deleteSingleTicket,
 } = require("../controllers/hireDriverTicketController");
 
+const {
+  driverTicketPaymentStatus,
+  driverTicketStatus,
+  driverTicketScheduleOfService,
+  driverTicketTypesOfService,
+} = require("../controllers/filterController");
+
 const router = express.Router();
 
-router.route("/driver/ticket/create").post(createTicket);
-// router.route("/ticket/create").post(isLoggedIn, createTicket);
-router.route("/driver/ticket/:id").get(getSingleTicket);
-// router.route("/ticket/:id").get(isLoggedIn, getSingleTicket);
-router.route("/driver/ticket/update/:id").put(updateSingleTicket);
-// router.route("/ticket/update/:id").put(isLoggedIn, updateSingleTicket);
-router.route("/driver/ticket/delete/:id").delete(deleteSingleTicket);
-// router.route("/ticket/delete/:id").delete(isLoggedIn, deleteSingleTicket);
-router.route("/drivers/ticket").get(getAllTickets);
-
-// Admin only routes
-// router.route("/admin/tickets").get(isLoggedIn, adminGetAllTickets);
-// router
-//   .route("/admin/ticket/update/:id")
-//   .put(isLoggedIn, customRole("admin"), adminUpdateATicket);
-// router
-//   .route("/admin/ticket/delete/:id")
-//   .delete(isLoggedIn, customRole("admin"), adminDeleetATicket);
+router.route("ticket/driver/create").post(createTicket);
+// router.route("/ticket/create").post(isDriverLoggedIn, createTicket);
+router.route("/ticket/driver/:id").get(getSingleTicket);
+// router.route("/ticket/:id").get(isDriverLoggedIn, getSingleTicket);
+router.route("/ticket/driver/update/:id").put(updateSingleTicket);
+// router.route("/ticket/update/:id").put(isDriverLoggedIn, updateSingleTicket);
+router.route("/ticket/driver/delete/:id").delete(deleteSingleTicket);
+// router.route("/ticket/delete/:id").delete(isDriverLoggedIn, deleteSingleTicket);
+router.route("/allticket/driver").get(getAllTickets);
+router.route("/ticket/driver/filter/status").delete(driverTicketStatus);
+router
+  .route("/ticket/driver/filter/paymentstatus")
+  .delete(driverTicketPaymentStatus);
+router
+  .route("/ticket/driver/filter/schedule")
+  .delete(driverTicketScheduleOfService);
+router
+  .route("/ticket/driver/filter/servicetype")
+  .delete(driverTicketTypesOfService);
 
 module.exports = router;

@@ -3,31 +3,49 @@ const {
   createTicket,
   getSingleTicket,
   updateSingleTicket,
-  getAllTickets,
-  deleteSingleTicket,
+  onTimeVerifyTicketOTP,
+  scheduledArrivalVerifyTicketOTP,
+  scheduledWorkshopVerifyTicketOTP,
+  scheduledDeliverVerifyTicketOTP,
+  getNearestMechanicList,
 } = require("../controllers/mechanicTicketController");
 
-const { isLoggedIn, customRole } = require("../middlewares/user");
+const {
+  mechanicTicketPaymentStatus,
+  mechanicTicketStatus,
+  mechanicTicketTypesOfService,
+  mechanicTicketScheduleOfService,
+} = require("../controllers/filterController");
+const { isLoggedIn } = require("../middlewares/user");
 
 const router = express.Router();
 
-router.route("/mechanic/ticket/create").post(createTicket);
-// router.route("/ticket/create").post(isLoggedIn, createTicket);
-router.route("/mechanic/ticket/:id").get(getSingleTicket);
-// router.route("/ticket/:id").get(isLoggedIn, getSingleTicket);
-router.route("/mechanic/ticket/update/:id").put(updateSingleTicket);
-// router.route("/ticket/update/:id").put(isLoggedIn, updateSingleTicket);
-router.route("/mechanic/ticket/delete/:id").delete(deleteSingleTicket);
-// router.route("/ticket/delete/:id").delete(isLoggedIn, deleteSingleTicket);
-router.route("/mechanic/tickets").get(getAllTickets);
+router.route("/ticket/mechanic/create").post(isLoggedIn, createTicket);
+router.route("/ticket/mechanic/:id").get(isLoggedIn, getSingleTicket);
+router.route("/ticket/mechanic/update/:id").put(isLoggedIn, updateSingleTicket);
+router
+  .route("/ticket/mechanic/filter/status")
+  .get(isLoggedIn, mechanicTicketStatus);
+router
+  .route("/ticket/mechanic/filter/paymentstatus")
+  .get(mechanicTicketPaymentStatus);
+router
+  .route("/ticket/mechanic/filter/schedule")
+  .get(mechanicTicketScheduleOfService);
+router
+  .route("/ticket/mechanic/filter/servicetype")
+  .get(mechanicTicketTypesOfService);
 
-// Admin only routes
-// router.route("/admin/tickets").get(isLoggedIn, adminGetAllTickets);
-// router
-//   .route("/admin/ticket/update/:id")
-//   .put(isLoggedIn, customRole("admin"), adminUpdateATicket);
-// router
-//   .route("/admin/ticket/delete/:id")
-//   .delete(isLoggedIn, customRole("admin"), adminDeleetATicket);
+router.route("/ticket/mechanic/ontime/verifyotp").post(onTimeVerifyTicketOTP);
+router
+  .route("/ticket/mechanic/schedule/arrive/verifyotp")
+  .post(scheduledArrivalVerifyTicketOTP);
+router
+  .route("/ticket/mechanic/schedule/workshop/verifyotp")
+  .post(scheduledWorkshopVerifyTicketOTP);
+router
+  .route("/ticket/mechanic/schedule/deliver/verifyotp")
+  .post(scheduledDeliverVerifyTicketOTP);
+router.route("/ticket/mechanic/nearest/all").post(getNearestMechanicList);
 
 module.exports = router;

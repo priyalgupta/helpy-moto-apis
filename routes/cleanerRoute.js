@@ -7,27 +7,30 @@ const {
   getSingleCleaner,
   updateSingleCleaner,
   deleteSingleCleaner,
-  forgotPassword,
-  resetPassword,
-  getAllCleaner,
+  getLoggedinCleanerDetails,
+  getAllCleaners,
+  resetCleanerPassword,
+  forgotCleanerPassword,
+  signupCleanerWithOTP,
+  loginCleanerWithOTP,
+  signCleanerWithOTP,
 } = require("../controllers/cleanerController");
-const { isLoggedIn } = require("../middlewares/cleanerUser");
+const { isCleanerLoggedIn } = require("../middlewares/cleanerUser");
 
 const router = express.Router();
 
+router.route("/cleaner/otpsign").post(signCleanerWithOTP);
 router.route("/cleaner/signup").post(signupCleaner);
+// router.route("/cleaner/otpsignup").post(signupCleanerWithOTP);
 router.route("/cleaner/login").post(loginCleaner);
-router.route("/cleaner/logout").post(logoutCleaner);
-// router.route("/ticket/create").post(isLoggedIn, createTicket);
-router.route("/cleaner/forgotpassword").post(forgotPassword);
-router.route("/cleaner/password/reset/:token").post(resetPassword);
-router.route("/cleaner").get(getLoggedinUserDetails);
-router.route("/cleaner/:id").get(getSingleCleaner);
-// router.route("/ticket/:id").get(isLoggedIn, getSingleTicket);
-router.route("/cleaner/update/:id").put(updateSingleCleaner);
-// router.route("/ticket/update/:id").put(isLoggedIn, updateSingleTicket);
-router.route("/cleaner/delete/:id").delete(deleteSingleCleaner);
-// router.route("/ticket/delete/:id").delete(isLoggedIn, deleteSingleTicket);
-router.route("/cleaners").get(getAllCleaner);
+// router.route("/cleaner/otplogin").post(loginCleanerWithOTP);
+router.route("/cleaner/logout").get(logoutCleaner);
+router.route("/cleaner/forgotpassword").post(forgotCleanerPassword);
+router.route("/cleaner/password/reset/:token").post(resetCleanerPassword);
+router.route("/cleanerdashboard").get(isCleanerLoggedIn, getLoggedinCleanerDetails);
+router.route("/cleaner/update/:id").put(isCleanerLoggedIn, updateSingleCleaner);
+router.route("/cleaner/delete/:id").delete(isCleanerLoggedIn, deleteSingleCleaner);
+router.route("/cleaner/:id").get(isCleanerLoggedIn, getSingleCleaner);
+router.route("/cleaners").get(getAllCleaners);
 
 module.exports = router;

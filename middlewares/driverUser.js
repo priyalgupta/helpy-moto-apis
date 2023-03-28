@@ -3,7 +3,7 @@ const BigPromise = require("../middlewares/bigPromise");
 const CustomError = require("../utils/customError");
 const jwt = require("jsonwebtoken");
 
-exports.isLoggedIn = BigPromise(async (req, res, next) => {
+exports.isDriverLoggedIn = BigPromise(async (req, res, next) => {
   const token =
     req.header("Authorization").replace("Bearer ", "") || req.body?.token;
 
@@ -13,6 +13,6 @@ exports.isLoggedIn = BigPromise(async (req, res, next) => {
 
   const decoded = jwt.verify(token, process.env.JWT_SECRET);
 
-  req.user = await Driver.findById(decoded.id);
+  req.decodedUser = await Driver.findById(decoded.id);
   next();
 });
